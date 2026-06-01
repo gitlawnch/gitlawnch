@@ -130,23 +130,31 @@ export default function FeedPage() {
           { label: 'Block',     value: stats.lastBlock > 0 ? `#${stats.lastBlock.toLocaleString()}` : '--', green: false },
         ].map(s => (
           <div key={s.label} style={{
-            background: 'rgba(255,255,255,0.025)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: 12, padding: '14px 18px',
-            transition: 'border-color 0.3s',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 14, padding: '16px 20px',
+            backdropFilter: 'blur(12px)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)',
+            transition: 'all 0.3s',
             position: 'relative', overflow: 'hidden',
           }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(26,255,110,0.2)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}>
+          onMouseEnter={e => {
+            e.currentTarget.style.borderColor = 'rgba(26,255,110,0.3)'
+            e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(26,255,110,0.1), 0 4px 24px rgba(26,255,110,0.08)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+            e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)'
+          }}>
             <div style={{
-              fontSize: 10, color: '#333', textTransform: 'uppercase',
-              letterSpacing: '0.1em', marginBottom: 6, fontWeight: 600,
+              fontSize: 10, color: '#555', textTransform: 'uppercase',
+              letterSpacing: '0.12em', marginBottom: 8, fontWeight: 600,
             }}>{s.label}</div>
             <div style={{
-              fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px',
+              fontSize: 26, fontWeight: 700, letterSpacing: '-0.5px',
               fontVariantNumeric: 'tabular-nums',
               color: s.green ? '#1aff6e' : '#e8e8e8',
-              textShadow: s.green ? '0 0 16px rgba(26,255,110,0.2)' : 'none',
+              textShadow: s.green ? '0 0 20px rgba(26,255,110,0.3)' : 'none',
             }}>
               {s.value || '--'}
             </div>

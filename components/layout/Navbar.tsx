@@ -84,7 +84,7 @@ export default function Navbar() {
           {/* Search */}
           <div className="flex-1 max-w-md mx-auto" ref={searchRef}>
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#3a5568]" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666]" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" strokeLinecap="round"/>
               </svg>
               <input value={query}
@@ -96,7 +96,7 @@ export default function Navbar() {
                   }
                 }}
                 placeholder="Search token, symbol, address, or creator..."
-                className="input-dark w-full pl-9 pr-4 py-2 text-[13px]" />
+                className="w-full pl-9 pr-4 py-2 text-[13px] rounded-xl text-[#e8e8e8] outline-none transition-all" style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(255,255,255,0.15)",color:"#e8e8e8"}} onFocus={e=>{e.currentTarget.style.border="1.5px solid rgba(26,255,110,0.5)";e.currentTarget.style.background="rgba(255,255,255,0.1)"}} onBlur={e=>{e.currentTarget.style.border="1.5px solid rgba(255,255,255,0.15)";e.currentTarget.style.background="rgba(255,255,255,0.08)"}} />
               {showSearch && (query || results.length > 0) && (
                 <div className="absolute top-full mt-2 left-0 right-0 glass rounded-xl overflow-hidden shadow-2xl z-50">
                   {results.length === 0 && query && (
