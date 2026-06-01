@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { getNewTokens, getTrendingTokens, getTopVolumeTokens, getStats, supabase, type Token } from '@/lib/supabase'
 import TokenRow from '@/components/token/TokenRow'
+import LiveActivity from '@/components/LiveActivity'
 
 type Tab = 'new' | 'trending' | 'volume'
 
@@ -160,6 +161,11 @@ export default function FeedPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* ── Live Activity ── */}
+      <div className="max-w-[1400px] mx-auto px-4 pt-4" style={{ position: 'relative', zIndex: 1 }}>
+        <LiveActivity />
       </div>
 
       {/* ── Feed ── */}
