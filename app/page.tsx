@@ -71,7 +71,7 @@ export default function FeedPage() {
 
 
   function fmtStatUsd(v: number) {
-    if (v === 0) return '--'
+    if (!v || v < 1) return '--'
     if (v >= 1000000) return '$' + (v / 1000000).toFixed(2) + 'M'
     if (v >= 1000) return '$' + (v / 1000).toFixed(2) + 'K'
     return '$' + v.toFixed(2)
