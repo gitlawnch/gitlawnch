@@ -489,8 +489,56 @@ export default function TokenPage({ params }: { params: Promise<{ address: strin
 
           {/* Left */}
           <div className="flex-1 min-w-0 space-y-4">
-            <div className="glass overflow-hidden">
-              <iframe src={geckoUrl} className="w-full h-[420px]" frameBorder="0" allow="clipboard-write" title="chart" />
+            <div style={{
+              background: 'linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))',
+              border: '1px solid rgba(26,255,110,0.12)',
+              borderRadius: 14, overflow: 'hidden',
+              backdropFilter: 'blur(14px)',
+              boxShadow: '0 0 24px rgba(26,255,110,0.04)',
+            }}>
+              {/* Chart header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                {/* Price info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', marginBottom: 2 }}>Price</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', fontFamily: 'JetBrains Mono, monospace' }}>
+                      {livePrice > 0 ? `$${livePrice.toFixed(8)}` : token.price_usd > 0 ? `$${token.price_usd.toFixed(8)}` : '--'}
+                    </div>
+                  </div>
+                  <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.06)' }} />
+                  <div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', marginBottom: 2 }}>MCap</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#e8e8e8', fontFamily: 'JetBrains Mono, monospace' }}>
+                      {mcapUsd > 0 ? fmtUsd(mcapUsd) : '--'}
+                    </div>
+                  </div>
+                  <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.06)' }} />
+                  <div>
+                    <div style={{ fontSize: 10, color: 'rgba(26,255,110,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', marginBottom: 2 }}>Vol 24h</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: (token.volume_24h_usd||0) > 0 ? '#1aff6e' : '#333', fontFamily: 'JetBrains Mono, monospace' }}>
+                      {(token.volume_24h_usd||0) > 0 ? fmtUsd(token.volume_24h_usd) : '--'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status badges */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#1aff6e', background: 'rgba(26,255,110,0.08)', border: '1px solid rgba(26,255,110,0.2)', borderRadius: 20, padding: '3px 8px' }}>
+                    <div className="live-dot" style={{ width: 5, height: 5 }} />
+                    Live Trading
+                  </span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: '#a064ff', background: 'rgba(160,100,255,0.07)', border: '1px solid rgba(160,100,255,0.18)', borderRadius: 20, padding: '3px 8px' }}>
+                    Uniswap V4
+                  </span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: '#4d9fff', background: 'rgba(77,159,255,0.07)', border: '1px solid rgba(77,159,255,0.18)', borderRadius: 20, padding: '3px 8px' }}>
+                    Base
+                  </span>
+                </div>
+              </div>
+
+              {/* Chart iframe */}
+              <iframe src={geckoUrl} className="w-full h-[400px]" frameBorder="0" allow="clipboard-write" title="chart" />
             </div>
 
             {/* Trades */}
