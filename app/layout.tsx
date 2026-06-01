@@ -3,6 +3,7 @@ import './globals.css'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import BackgroundCanvas from '@/components/BackgroundCanvas'
+import ActivityTicker from '@/components/ActivityTicker'
 
 export const metadata: Metadata = {
   title:       'gitlawnch - Token Launchpad on Base',
@@ -29,11 +30,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <BackgroundCanvas />
+        <ActivityTicker />
+        <div style={{ paddingTop: 32 }}>
         <Navbar />
         <main className="relative z-10">
           {children}
         </main>
         <Footer />
+        </div>
       </body>
     </html>
   )
