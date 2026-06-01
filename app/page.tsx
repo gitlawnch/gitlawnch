@@ -77,7 +77,7 @@ export default function FeedPage() {
     return '$' + v.toFixed(2)
   }
 
-  const GRID = '28px minmax(160px,1fr) 80px 110px 110px 60px 110px 70px'
+  const GRID = '28px 190px 110px 110px 110px 80px 60px 100px 1fr'
 
   return (
     <div className="min-h-screen">
@@ -222,11 +222,12 @@ export default function FeedPage() {
             style={{ gridTemplateColumns: GRID }}>
             <span />
             <span className="text-[11px] text-muted uppercase tracking-wider font-mono">Token</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right pr-3">MCap</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right pr-3">Volume</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono">Creator</span>
             <span className="text-[11px] text-muted uppercase tracking-wider font-mono">Age</span>
-            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">MCap</span>
-            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">Volume</span>
-            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">Txns</span>
-            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">Fees</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right pr-3">Txns</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right pr-3">Fees</span>
             <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">Trade</span>
           </div>
 
