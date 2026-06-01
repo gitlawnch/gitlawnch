@@ -1,0 +1,668 @@
+'use client'
+import { use, useState, useEffect, useCallback, useRef } from 'react'
+import Link from 'next/link'
+import { useWallet, CFG, ABI, getContract, getReadProvider, fmtAge, fmtUsd, fmtAddr, fmtNum, fmtEth } from '@/hooks/useWallet'
+import { getToken, getTokenSwaps, getNewTokens, supabase, type Token, type Swap } from '@/lib/supabase'
+
+const SLIPPAGE_KEY = 'gl_slippage_v1'
+const QUOTER_ABI = [
+  'function quoteExactInputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountOut,uint256 gasEstimate)',
+]
+
+function poolKeyFor(token: string) {
+  return { currency0: token, currency1: CFG.weth, fee: 0, tickSpacing: 200, hooks: CFG.hook }
+}
+
+export default function TokenPage({ params }: { params: Promise<{ address: string }> }) {
+  const { address } = use(params)
+  const { account, signer } = useWallet()
+
+  const [token, setToken]   = useState<Token | null>(null)
+  const [swaps, setSwaps]   = useState<Swap[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isBuy, setIsBuy]   = useState(true)
+  const [amount, setAmount] = useState('')
+  const [slippage, setSlippage] = useState(() => {
+    if (typeof window === 'undefined') return 3
+    return parseFloat(localStorage.getItem(SLIPPAGE_KEY) || '3') || 3
+  })
+  const [swapStatus, setSwapStatus] = useState('')
+  const [swapBusy, setSwapBusy]     = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [ethBal, setEthBal] = useState('0')
+  const [tokenBal, setTokenBal] = useState('0')
+  const [quoteOut, setQuoteOut] = useState<bigint | null>(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
+  const [claiming, setClaiming]   = useState(false)
+  const [claimableEth, setClaimableEth] = useState<bigint>(0n)
+  const [mcapUsd,      setMcapUsd]      = useState<number>(0)
+  const [livePrice,    setLivePrice]     = useState<number>(0)
+  const [claimableTok, setClaimableTok] = useState<bigint>(0n)
+  const [claimStatus, setClaimStatus] = useState('')
+  const [allTokens, setAllTokens]     = useState<Token[]>([])
+  const [payWith, setPayWith]         = useState<string>('ETH')
+  const [showPayPicker, setShowPayPicker] = useState(false)
+  const quoteTimer = useRef<any>(null)
+
+  useEffect(() => {
+    loadData()
+    loadAllTokens()
+
+    const sub = supabase
+      .channel(`token-${address}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'swaps', filter: `token_id=eq.${address.toLowerCase()}` },
+        payload => setSwaps(prev => [payload.new as Swap, ...prev].slice(0, 50)))
+      .subscribe()
+    return () => { supabase.removeChannel(sub) }
+  }, [address])
+
+  useEffect(() => {
+    if (!account) return
+    refreshBalances()
+  }, [account, address, isBuy, payWith])
+
+  async function loadData() {
+    const [t, s] = await Promise.all([getToken(address), getTokenSwaps(address)])
+    setToken(t); setSwaps(s); setLoading(false)
+    if (t) { loadClaimable(t.id); loadMcap(t.id) }
+  }
+
+  async function loadClaimable(tokenId: string) {
+    try {
+      const locker = await getContract(CFG.locker, [
+        'function claimable(address token, address currency) view returns (uint256)',
+      ])
+      const [eth, tok] = await Promise.all([
+        locker.claimable(tokenId, CFG.weth),
+        locker.claimable(tokenId, tokenId),
+      ])
+      setClaimableEth(BigInt(eth.toString()))
+      setClaimableTok(BigInt(tok.toString()))
+    } catch (e) { console.warn('claimable failed:', e) }
+  }
+
+  async function loadMcap(tokenId: string) {
+    try {
+      const { ethers } = await import('ethers')
+      const p = await getReadProvider()
+
+      // Get WETH price from Supabase
+      const { data: wethData } = await supabase.from('weth_price').select('price_usd').eq('id', 'latest').single()
+      const wethUsd = (wethData as any)?.price_usd ?? 0
+      if (!wethUsd) return
+
+      // Compute poolId: keccak256(abi.encode(token, weth, 0, 200, hook))
+      // gitlawnch tokens always have address < WETH (a19 suffix < 0x4200...)
+      // so token = currency0, WETH = currency1
+      const abiCoder = ethers.AbiCoder.defaultAbiCoder()
+      const hook = ethers.getAddress(CFG.hook)
+      const poolId = ethers.keccak256(
+        abiCoder.encode(
+          ['address','address','uint24','int24','address'],
+          [ethers.getAddress(tokenId), ethers.getAddress(CFG.weth), 0, 200, hook]
+        )
+      )
+
+      // Call StateView.getSlot0
+      const sv = await getContract(
+        '0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71',
+        ['function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)']
+      )
+      const [sqrtPriceX96] = await sv.getSlot0(poolId)
+      if (!sqrtPriceX96 || sqrtPriceX96 === 0n) return
+
+      // price = (sqrtPriceX96 / 2^96)^2 = WETH per token
+      const Q96 = 2 ** 96
+      const sqrtNum = Number(sqrtPriceX96)
+      const priceWeth = (sqrtNum / Q96) ** 2
+      const priceUsd  = priceWeth * wethUsd
+      const mcap      = priceUsd * 100_000_000_000 // 100B supply
+
+      setLivePrice(priceUsd)
+      setMcapUsd(mcap)
+    } catch (e) {
+      console.warn('loadMcap failed:', e)
+    }
+  }
+
+  async function loadAllTokens() {
+    const tokens = await getNewTokens(50)
+    setAllTokens(tokens.filter(t => t.id !== address.toLowerCase()))
+  }
+
+  async function refreshBalances() {
+    try {
+      const { ethers } = await import('ethers')
+      const p = await (await import('@/hooks/useWallet')).getReadProvider()
+      if (isBuy) {
+        if (payWith === 'ETH') {
+          const b = await p.getBalance(account!)
+          setEthBal(ethers.formatEther(b))
+        } else if (payWith === 'WETH') {
+          const c = await getContract(CFG.weth, ABI.token)
+          const b = await c.balanceOf(account!)
+          setEthBal(ethers.formatEther(b))
+        } else {
+          const c = await getContract(payWith, ABI.token)
+          const b = await c.balanceOf(account!)
+          setEthBal(ethers.formatEther(b))
+        }
+      } else {
+        const c = await getContract(address, ABI.token)
+        const b = await c.balanceOf(account!)
+        setTokenBal(ethers.formatEther(b))
+      }
+    } catch {}
+  }
+
+  function saveSlippage(v: number) {
+    setSlippage(v)
+    localStorage.setItem(SLIPPAGE_KEY, String(v))
+  }
+
+  function setPercent(pct: number) {
+    const bal = isBuy ? parseFloat(ethBal) : parseFloat(tokenBal)
+    if (!bal) return
+    let amt = bal * (pct / 100)
+    if (isBuy && payWith === 'ETH' && pct === 100) amt = Math.max(0, bal - 0.0005)
+    setAmount(amt.toFixed(6))
+    triggerQuote(String(amt.toFixed(6)))
+  }
+
+  function triggerQuote(val: string) {
+    clearTimeout(quoteTimer.current)
+    quoteTimer.current = setTimeout(() => runQuote(val), 350)
+  }
+
+  async function runQuote(val: string) {
+    if (!val || parseFloat(val) <= 0 || !token) { setQuoteOut(null); return }
+    setQuoteLoading(true)
+    try {
+      const { ethers } = await import('ethers')
+      const p = await (await import('@/hooks/useWallet')).getReadProvider()
+      const quoter = new ethers.Contract(CFG.quoter, QUOTER_ABI, p)
+      const amtIn = ethers.parseUnits(val, 18)
+      const key = poolKeyFor(token.id)
+      let out: bigint
+
+      if (isBuy) {
+        if (payWith === 'ETH' || payWith === 'WETH') {
+          // WETH → token: zeroForOne = false (weth=currency1 → token=currency0)
+          const res = await quoter.quoteExactInputSingle.staticCall({
+            poolKey: key, zeroForOne: false, exactAmount: amtIn, hookData: '0x'
+          })
+          out = res[0]
+        } else {
+          // token A → WETH → token B (two hops)
+          const keyA = poolKeyFor(payWith)
+          const res1 = await quoter.quoteExactInputSingle.staticCall({
+            poolKey: keyA, zeroForOne: true, exactAmount: amtIn, hookData: '0x'
+          })
+          const wethOut = res1[0]
+          const res2 = await quoter.quoteExactInputSingle.staticCall({
+            poolKey: key, zeroForOne: false, exactAmount: wethOut, hookData: '0x'
+          })
+          out = res2[0]
+        }
+      } else {
+        // sell token → WETH: zeroForOne = true (token=currency0 → weth=currency1)
+        const res = await quoter.quoteExactInputSingle.staticCall({
+          poolKey: key, zeroForOne: true, exactAmount: amtIn, hookData: '0x'
+        })
+        out = res[0]
+      }
+      setQuoteOut(out)
+    } catch (e) {
+      console.warn('quote failed', e)
+      setQuoteOut(null)
+    } finally {
+      setQuoteLoading(false)
+    }
+  }
+
+  function applySlippage(out: bigint): bigint {
+    const bps = BigInt(Math.round((100 - slippage) * 100))
+    return (out * bps) / 10000n
+  }
+
+  async function doSwap() {
+    if (!account || !signer || !token || !amount) return
+    if (!quoteOut || quoteOut === 0n) { setSwapStatus('❌ Get a quote first'); return }
+
+    const minOut = applySlippage(quoteOut)
+    setSwapBusy(true); setSwapStatus('')
+
+    try {
+      const { ethers } = await import('ethers')
+      const amtIn = ethers.parseUnits(amount, 18)
+      const router = await getContract(CFG.router, ABI.router, signer)
+
+      if (isBuy) {
+        if (payWith === 'ETH') {
+          setSwapStatus('Confirm in wallet…')
+          const tx = await router.swap(CFG.ZERO, CFG.ZERO, token.id, CFG.hook, amtIn, minOut, { value: amtIn })
+          setSwapStatus('Waiting for confirmation…')
+          await tx.wait()
+        } else {
+          const tokenInAddr = payWith === 'WETH' ? CFG.weth : payWith
+          const hookIn      = payWith === 'WETH' ? CFG.ZERO : CFG.hook
+          // approve router
+          const tk = await getContract(tokenInAddr, ABI.token, signer)
+          const allowance = await tk.allowance(account, CFG.router)
+          if (allowance < amtIn) {
+            setSwapStatus('Approving…')
+            const atx = await tk.approve(CFG.router, ethers.MaxUint256)
+            await atx.wait()
+          }
+          setSwapStatus('Confirm swap in wallet…')
+          const tx = await router.swap(tokenInAddr, hookIn, token.id, CFG.hook, amtIn, minOut)
+          setSwapStatus('Waiting…')
+          await tx.wait()
+        }
+      } else {
+        // sell token → ETH
+        const tk = await getContract(token.id, ABI.token, signer)
+        const allowance = await tk.allowance(account, CFG.router)
+        if (allowance < amtIn) {
+          setSwapStatus('Approving…')
+          const atx = await tk.approve(CFG.router, ethers.MaxUint256)
+          await atx.wait()
+        }
+        setSwapStatus('Confirm sell in wallet…')
+        const tx = await router.swap(token.id, CFG.hook, CFG.ZERO, CFG.ZERO, amtIn, minOut)
+        setSwapStatus('Waiting…')
+        await tx.wait()
+      }
+
+      setSwapStatus(`✅ ${isBuy ? 'Buy' : 'Sell'} successful!`)
+      setAmount(''); setQuoteOut(null)
+      refreshBalances()
+    } catch (e: any) {
+      if (e.code === 4001 || e.code === 'ACTION_REJECTED') setSwapStatus('❌ Rejected')
+      else setSwapStatus('❌ ' + (e.shortMessage || e.message?.slice(0, 80) || 'Failed'))
+    } finally {
+      setSwapBusy(false)
+    }
+  }
+
+  async function claimFees() {
+    if (!account || !signer || !token) return
+    setClaiming(true); setClaimStatus('Confirm in wallet…')
+    try {
+      const locker = await getContract(CFG.locker, ABI.locker, signer)
+      const tx = await locker.claimFees(token.id)
+      await tx.wait()
+      setClaimStatus('✅ Fees claimed!')
+      loadData()
+      loadClaimable(token.id)
+    } catch (e: any) {
+      setClaimStatus('❌ ' + (e.shortMessage || e.message?.slice(0, 60) || 'Failed'))
+    } finally { setClaiming(false) }
+  }
+
+  function copyCA() {
+    navigator.clipboard.writeText(address)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  // Format quote output
+  function quoteDisplay(): string {
+    if (quoteLoading) return 'Calculating…'
+    if (!quoteOut || quoteOut === 0n) return '?'
+    const { ethers } = require('ethers')
+    const n = parseFloat(ethers.formatEther(quoteOut))
+    if (isBuy) return fmtNum(n) || n.toFixed(0)
+    return n.toFixed(6)
+  }
+
+  function payLabel(): string {
+    if (payWith === 'ETH')  return 'ETH'
+    if (payWith === 'WETH') return 'WETH'
+    const t = allTokens.find(t => t.id === payWith)
+    return t ? `$${t.symbol}` : 'TOKEN'
+  }
+
+  function currentBalance(): string {
+    return isBuy ? parseFloat(ethBal).toFixed(4) : parseFloat(tokenBal).toFixed(4)
+  }
+
+  const geckoUrl = token
+    ? `https://www.geckoterminal.com/base/pools/${token.id}?embed=1&info=0&swaps=0&grayscale=0&light_chart=0`
+    : ''
+
+  const isCreator = account?.toLowerCase() === token?.creator?.toLowerCase()
+
+  if (loading) return (
+    <div className="min-h-screen pt-24 flex items-center justify-center">
+      <div className="flex items-center gap-2 text-second text-[13px]">
+        <div className="w-4 h-4 border-2 border-[#00ff87] border-t-transparent rounded-full animate-spin" />
+        Loading…
+      </div>
+    </div>
+  )
+
+  if (!token) return (
+    <div className="min-h-screen pt-24 flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-4xl mb-3">🔍</div>
+        <div className="text-[14px] text-second">Token not found</div>
+        <Link href="/" className="mt-4 inline-block text-[13px] text-green hover:underline">← Back to feed</Link>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen pt-20">
+      <div className="max-w-[1400px] mx-auto px-4 py-6">
+
+        <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] text-second hover:text-white transition-colors mb-5">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+            <path d="m15 18-6-6 6-6" strokeLinecap="round"/>
+          </svg>
+          Back to feed
+        </Link>
+
+        {/* Header */}
+        <div className="flex items-start gap-4 mb-5">
+          <div
+            className="token-avatar !w-12 !h-12 !text-lg shrink-0"
+            onClick={() => token.logo_url && window.open(token.logo_url, '_blank')}
+            style={{ cursor: token.logo_url ? 'pointer' : 'default' }}
+            title={token.logo_url ? 'Click to view full image' : undefined}>
+            {token.logo_url ? <img src={token.logo_url} alt={token.symbol} className="w-full h-full rounded-full object-cover" /> : token.symbol[0]}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-display text-xl font-700 text-white">{token.name}</h1>
+              <span className="text-[12px] text-second font-mono">${token.symbol}</span>
+              <button onClick={copyCA}
+                className="flex items-center gap-1.5 text-[11px] font-mono px-2 py-1 rounded-lg border border-[rgba(255,255,255,0.08)] hover:border-[rgba(0,255,135,0.3)] hover:text-green transition-all text-second">
+                CA: {fmtAddr(token.id)}
+                {copied
+                  ? <svg width="10" height="10" fill="none" stroke="#00ff87" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M20 6 9 17l-5-5" strokeLinecap="round"/></svg>
+                  : <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                }
+              </button>
+              <a href={`https://basescan.org/address/${token.id}`} target="_blank" rel="noopener noreferrer"
+                className="text-[11px] text-second hover:text-green transition-colors">BaseScan ↗</a>
+              <span className="text-[11px] text-muted">by {fmtAddr(token.creator)}</span>
+              <span className="text-[11px] text-muted">· {fmtAge(token.launch_time)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats pills */}
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-5">
+          {[
+            { label: 'Market Cap',  value: mcapUsd > 0 ? fmtUsd(mcapUsd) : fmtUsd(token.market_cap_usd) },
+            { label: 'Volume 24h',  value: fmtUsd(token.volume_24h_usd), green: (token.volume_24h_usd || 0) > 0 },
+            { label: 'Fees Earned', value: claimableEth > 0n || claimableTok > 0n ? fmtUsd((Number(claimableEth) / 1e18) * (token.price_usd > 0 ? token.price_usd * 1 : 0)) : (token.creator_fees_earned ? fmtUsd(token.creator_fees_earned) : '--') },
+            { label: 'Txns',        value: token.total_txns ? String(token.total_txns) : '--' },
+            { label: 'Supply',      value: '100B' },
+            { label: 'Network',     value: 'Base' },
+          ].map(s => (
+            <div key={s.label} className="glass px-3 py-2.5">
+              <div className="text-[10px] text-muted uppercase tracking-wider font-mono mb-1">{s.label}</div>
+              <div className={`text-[14px] font-mono font-500 ${s.green ? 'text-green' : 'text-white'}`}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Layout */}
+        <div className="flex gap-4 flex-col lg:flex-row">
+
+          {/* Left */}
+          <div className="flex-1 min-w-0 space-y-4">
+            <div className="glass overflow-hidden">
+              <iframe src={geckoUrl} className="w-full h-[420px]" frameBorder="0" allow="clipboard-write" title="chart" />
+            </div>
+
+            {/* Trades */}
+            <div className="glass overflow-hidden">
+              <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.04)] flex items-center justify-between">
+                <span className="text-[13px] font-medium text-white">Recent Trades</span>
+                <div className="flex items-center gap-1.5 text-[11px] text-second font-mono"><div className="live-dot" /> Live</div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[rgba(255,255,255,0.04)]">
+                      {['Side', 'Amount', 'Value', 'Wallet', 'Time'].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left text-[10px] text-muted uppercase tracking-wider font-mono">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {swaps.length === 0
+                      ? <tr><td colSpan={5} className="px-4 py-8 text-center text-[13px] text-second">No trades yet</td></tr>
+                      : swaps.map(s => (
+                        <tr key={s.id} className="border-b border-[rgba(255,255,255,0.03)] hover:bg-white/[0.02] transition-colors">
+                          <td className="px-4 py-2.5">
+                            <span className={`text-[12px] font-mono font-600 ${s.is_buy ? 'text-green' : 'text-red'}`}>
+                              {s.is_buy ? 'BUY' : 'SELL'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-[12px] text-white font-mono">
+                            {s.is_buy ? fmtEth(s.amount_in) + ' ETH' : fmtNum(Number(BigInt(s.amount_in)) / 1e18) + ' ' + token.symbol}
+                          </td>
+                          <td className="px-4 py-2.5 text-[12px] text-second font-mono">
+                            {s.price_usd ? fmtUsd(s.price_usd * Number(BigInt(s.amount_in)) / 1e18) : '--'}
+                          </td>
+                          <td className="px-4 py-2.5 text-[12px] text-muted font-mono">
+                            <a href={`https://basescan.org/tx/${s.tx_hash}`} target="_blank" rel="noopener noreferrer"
+                              className="hover:text-green transition-colors">{fmtAddr(s.sender)}</a>
+                          </td>
+                          <td className="px-4 py-2.5 text-[12px] text-muted font-mono">{fmtAge(s.timestamp)}</td>
+                        </tr>
+                      ))
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Right */}
+          <div className="w-full lg:w-[320px] shrink-0 space-y-4">
+
+            {/* Swap */}
+            <div className="glass p-4">
+              {/* Buy/Sell tabs */}
+              <div className="flex rounded-xl overflow-hidden border border-[rgba(255,255,255,0.06)] mb-4">
+                {(['buy', 'sell'] as const).map(side => (
+                  <button key={side} onClick={() => { setIsBuy(side === 'buy'); setAmount(''); setQuoteOut(null); setPayWith('ETH') }}
+                    className={`flex-1 py-2.5 text-[13px] font-600 font-display transition-all ${
+                      (isBuy && side === 'buy') ? 'bg-gradient-to-r from-[#00ff87] to-[#00c96b] text-[#050a0e]'
+                      : (!isBuy && side === 'sell') ? 'bg-[rgba(255,68,102,0.15)] text-[#ff4466]'
+                      : 'text-second hover:text-white'
+                    }`}>
+                    {side.charAt(0).toUpperCase() + side.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Balance */}
+              {account && (
+                <div className="flex justify-between text-[11px] text-muted font-mono mb-2">
+                  <span>Balance</span>
+                  <button className="text-second hover:text-green transition-colors" onClick={() => setPercent(100)}>
+                    {currentBalance()} {isBuy ? payLabel() : token.symbol}
+                  </button>
+                </div>
+              )}
+
+              {/* Pay with selector (buy mode) */}
+              {isBuy && (
+                <div className="mb-2 relative">
+                  <div className="text-[11px] text-muted mb-1.5 font-mono">PAY WITH</div>
+                  <button onClick={() => setShowPayPicker(!showPayPicker)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-[rgba(255,255,255,0.08)] hover:border-[rgba(0,255,135,0.2)] transition-all">
+                    <span className="text-[13px] font-mono text-white">{payLabel()}</span>
+                    <svg width="12" height="12" fill="none" stroke="#6b8fa3" viewBox="0 0 24 24" strokeWidth="2">
+                      <path d="m6 9 6 6 6-6" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                  {showPayPicker && (
+                    <div className="absolute top-full mt-1 left-0 right-0 glass rounded-xl overflow-hidden shadow-2xl z-10 max-h-48 overflow-y-auto">
+                      {[
+                        { id: 'ETH',  label: 'ETH',  sub: 'Native Ether' },
+                        { id: 'WETH', label: 'WETH', sub: 'Wrapped Ether' },
+                        ...allTokens.slice(0, 8).map(t => ({ id: t.id, label: `$${t.symbol}`, sub: t.name })),
+                      ].map(opt => (
+                        <button key={opt.id}
+                          onClick={() => { setPayWith(opt.id); setShowPayPicker(false); setAmount(''); setQuoteOut(null) }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(0,255,135,0.04)] transition-colors text-left ${payWith === opt.id ? 'bg-[rgba(0,255,135,0.06)]' : ''}`}>
+                          <div className="token-avatar !w-7 !h-7 !text-xs shrink-0">{opt.label[0]}</div>
+                          <div>
+                            <div className="text-[12px] text-white font-mono">{opt.label}</div>
+                            <div className="text-[10px] text-muted">{opt.sub}</div>
+                          </div>
+                          {payWith === opt.id && <div className="ml-auto w-2 h-2 rounded-full bg-green" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Amount */}
+              <div className="mb-3">
+                <div className="text-[11px] text-muted mb-1.5 font-mono">AMOUNT</div>
+                <div className="input-dark flex items-center px-3 py-2.5 gap-2">
+                  <input value={amount}
+                    onChange={e => { setAmount(e.target.value); triggerQuote(e.target.value) }}
+                    placeholder="0.0"
+                    className="flex-1 bg-transparent outline-none text-[16px] font-mono text-white placeholder:text-muted" />
+                  <span className="text-[13px] text-second font-mono shrink-0">{isBuy ? payLabel() : token.symbol}</span>
+                </div>
+              </div>
+
+              {/* Percent */}
+              <div className="grid grid-cols-4 gap-1.5 mb-3">
+                {[10, 25, 50, 100].map(p => (
+                  <button key={p} onClick={() => setPercent(p)}
+                    className="py-1.5 rounded-lg text-[11px] text-second border border-[rgba(255,255,255,0.06)] hover:border-[rgba(0,255,135,0.3)] hover:text-green transition-all font-mono">
+                    {p}%
+                  </button>
+                ))}
+              </div>
+
+              {/* Quote estimate */}
+              {(amount && parseFloat(amount) > 0) && (
+                <div className="mb-3 px-3 py-2.5 rounded-xl bg-[rgba(0,255,135,0.04)] border border-[rgba(0,255,135,0.1)]">
+                  <div className="text-[10px] text-muted font-mono mb-0.5">YOU RECEIVE (EST.)</div>
+                  <div className={`text-[15px] font-mono font-600 ${quoteLoading ? 'text-second' : quoteOut && quoteOut > 0n ? 'text-green' : 'text-muted'}`}>
+                    {quoteDisplay()} {isBuy ? token.symbol : 'ETH'}
+                  </div>
+                  <div className="text-[10px] text-muted font-mono mt-0.5">After 1% fee · {slippage}% slippage</div>
+                </div>
+              )}
+
+              {/* Slippage */}
+              <div className="mb-3">
+                <div className="text-[11px] text-muted mb-1.5 font-mono">SLIPPAGE</div>
+                <div className="flex gap-1.5">
+                  {[1, 3, 5, 15].map(s => (
+                    <button key={s} onClick={() => saveSlippage(s)}
+                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-mono transition-all ${
+                        slippage === s ? 'bg-[rgba(0,255,135,0.15)] text-green border border-[rgba(0,255,135,0.3)]'
+                        : 'border border-[rgba(255,255,255,0.06)] text-second hover:text-white'
+                      }`}>{s}%</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status */}
+              {swapStatus && (
+                <div className={`text-[11px] mb-3 p-2.5 rounded-lg leading-relaxed ${
+                  swapStatus.startsWith('✅') ? 'bg-[rgba(0,255,135,0.08)] text-green border border-[rgba(0,255,135,0.2)]'
+                  : swapStatus.startsWith('❌') ? 'bg-[rgba(255,68,102,0.08)] text-[#ff4466] border border-[rgba(255,68,102,0.2)]'
+                  : 'bg-[rgba(0,212,255,0.08)] text-cyan border border-[rgba(0,212,255,0.2)]'
+                }`}>{swapStatus}</div>
+              )}
+
+              <button onClick={account ? doSwap : undefined} disabled={swapBusy}
+                className={`w-full py-3.5 rounded-xl text-[14px] font-display font-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  !account ? 'btn-green'
+                  : isBuy ? 'bg-gradient-to-r from-[#00ff87] to-[#00c96b] text-[#050a0e] shadow-[0_0_20px_rgba(0,255,135,0.25)] hover:shadow-[0_0_35px_rgba(0,255,135,0.4)]'
+                  : 'bg-[rgba(255,68,102,0.15)] text-[#ff4466] border border-[rgba(255,68,102,0.3)] hover:bg-[rgba(255,68,102,0.25)]'
+                }`}>
+                {swapBusy ? 'Processing…'
+                  : !account ? 'Connect Wallet'
+                  : isBuy ? `Buy ${token.symbol}`
+                  : `Sell ${token.symbol}`}
+              </button>
+
+              <div className="flex justify-between mt-2 text-[11px] text-muted font-mono">
+                <span>1% trading fee</span>
+                <span>Slippage {slippage}%</span>
+              </div>
+            </div>
+
+            {/* Claim fees */}
+            {isCreator && (
+              <div className="glass p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <span>🏆</span>
+                  <span className="text-[13px] font-medium text-white">Accrued Fees</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-[rgba(0,255,135,0.04)] rounded-xl p-3 border border-[rgba(0,255,135,0.1)]">
+                    <div className="text-[10px] text-muted font-mono mb-1">WETH SIDE</div>
+                    <div className={`text-[16px] font-mono font-600 ${claimableEth > 0n ? 'text-green' : 'text-muted'}`}>
+                      {(Number(claimableEth) / 1e18).toFixed(5)}
+                    </div>
+                    <div className="text-[10px] text-second font-mono">WETH</div>
+                  </div>
+                  <div className="bg-[rgba(0,212,255,0.04)] rounded-xl p-3 border border-[rgba(0,212,255,0.1)]">
+                    <div className="text-[10px] text-muted font-mono mb-1">TOKEN SIDE</div>
+                    <div className={`text-[14px] font-mono font-600 ${claimableTok > 0n ? 'text-cyan' : 'text-muted'}`}>
+                      {fmtNum(Number(claimableTok) / 1e18)}
+                    </div>
+                    <div className="text-[10px] text-second font-mono">{token.symbol}</div>
+                  </div>
+                </div>
+                {claimStatus && (
+                  <div className={`text-[11px] mb-3 p-2.5 rounded-lg ${
+                    claimStatus.startsWith('✅') ? 'bg-[rgba(0,255,135,0.08)] text-green' : 'bg-[rgba(255,68,102,0.08)] text-[#ff4466]'
+                  }`}>{claimStatus}</div>
+                )}
+                {(claimableEth > 0n || claimableTok > 0n) ? (
+                  <button onClick={claimFees} disabled={claiming}
+                    className="btn-green w-full py-3 text-[13px] disabled:opacity-50">
+                    {claiming ? 'Claiming...' : 'Claim Fees'}
+                  </button>
+                ) : (
+                  <div className="w-full py-3 text-center text-[13px] text-muted border border-[rgba(255,255,255,0.06)] rounded-xl">
+                    No fees to claim
+                  </div>
+                )}
+                <p className="text-[10px] text-muted text-center mt-2">80% creator · 20% platform</p>
+              </div>
+            )}
+
+            {/* About */}
+            <div className="glass p-4">
+              <div className="text-[13px] font-medium text-white mb-3">About</div>
+              {!token.description && (
+                <div className="text-center py-4"><div className="text-2xl mb-2">🌱</div><div className="text-[12px] text-muted">No info added yet</div></div>
+              )}
+              {token.description && (
+                <p className="text-[12px] text-second leading-relaxed break-words overflow-hidden">{token.description}</p>
+              )}
+              {((token as any).website || (token as any).twitter || (token as any).telegram || (token as any).discord) && (
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  {(token as any).website  && <a href={(token as any).website}  target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[12px] text-second hover:text-green hover:border-[rgba(0,255,135,0.25)] transition-all">🌐 Website</a>}
+                  {(token as any).twitter  && <a href={(token as any).twitter}  target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[12px] text-second hover:text-green hover:border-[rgba(0,255,135,0.25)] transition-all">X Twitter</a>}
+                  {(token as any).telegram && <a href={(token as any).telegram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[12px] text-second hover:text-green hover:border-[rgba(0,255,135,0.25)] transition-all">Telegram</a>}
+                  {(token as any).discord  && <a href={(token as any).discord}  target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[12px] text-second hover:text-green hover:border-[rgba(0,255,135,0.25)] transition-all">Discord</a>}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
