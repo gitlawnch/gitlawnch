@@ -147,10 +147,24 @@ export default function FeedPage() {
         position: 'relative', zIndex: 1,
       }}>
         {[
-          { label: 'Tokens',    value: stats.totalTokens.toLocaleString(), green: false },
-          { label: 'Trades',    value: stats.totalSwaps.toLocaleString(),  green: false },
-          { label: 'ETH Price', value: stats.wethPrice > 0 ? `$${stats.wethPrice.toFixed(2)}` : '--', green: true },
-          { label: 'Block',     value: stats.lastBlock > 0 ? `#${stats.lastBlock.toLocaleString()}` : '--', green: false },
+        {
+          label: 'Total Tokens Created',
+          value: stats.totalTokens > 0 ? stats.totalTokens.toLocaleString() : '--',
+          sub: 'All time on Base',
+          color: '#e8e8e8', glow: false,
+        },
+        {
+          label: '24h Volume',
+          value: fmtStatUsd(volume24h),
+          sub: 'Trading volume today',
+          color: '#1aff6e', glow: true,
+        },
+        {
+          label: 'Creator Earnings',
+          value: fmtStatUsd(creatorFees),
+          sub: '80% fees to creators',
+          color: '#ffc832', glow: false,
+        },
         ].map(s => (
           <div key={s.label} style={{
             background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
