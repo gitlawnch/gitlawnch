@@ -85,7 +85,7 @@ export default function FeedPage() {
       {/* ── Hero ── */}
       <div style={{
         textAlign: 'center',
-        padding: '28px 24px 20px',
+        padding: '18px 24px 14px',
         borderBottom: '1px solid rgba(26,255,110,0.06)',
         position: 'relative', zIndex: 1,
       }}>
@@ -94,7 +94,7 @@ export default function FeedPage() {
           display: 'inline-flex', alignItems: 'center', gap: 7,
           background: 'rgba(26,255,110,0.07)', border: '1px solid rgba(26,255,110,0.18)',
           borderRadius: 20, padding: '5px 14px', fontSize: 12,
-          color: '#1aff6e', fontWeight: 500, marginBottom: 20,
+          color: '#1aff6e', fontWeight: 500, marginBottom: 10,
           boxShadow: '0 0 16px rgba(26,255,110,0.07)',
         }}>
           <div className="live-dot" style={{ width: 6, height: 6 }} />
@@ -102,7 +102,7 @@ export default function FeedPage() {
         </div>
 
         <h1 style={{
-          fontSize: 36, fontWeight: 700, color: '#e8e8e8',
+          fontSize: 18, fontWeight: 700, color: '#e8e8e8',
           lineHeight: 1.15, letterSpacing: '-1.5px', marginBottom: 14,
         }}>
           Launch tokens on{' '}
@@ -112,7 +112,7 @@ export default function FeedPage() {
 
         <p style={{
           fontSize: 15, color: '#555', lineHeight: 1.6,
-          maxWidth: 440, margin: '0 auto 16px',
+          maxWidth: 500, margin: '0 auto 12px',
         }}>
           Instant Uniswap V4 pool. 100B fixed supply.<br />
           1% trading fee — 80% goes to you, forever.
@@ -122,7 +122,7 @@ export default function FeedPage() {
           <button
             onClick={() => document.dispatchEvent(new CustomEvent('open-launch'))}
             className="btn-green"
-            style={{ fontSize: 14, padding: '11px 28px' }}>
+            style={{ fontSize: 13, padding: '8px 22px' }}>
             🚀 Launch a Token
           </button>
           <a href="/about" style={{
@@ -141,7 +141,7 @@ export default function FeedPage() {
       {/* ── Stats cards ── */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(3,1fr)',
-        gap: 10, padding: '12px 24px 0',
+        gap: 8, padding: '8px 24px 0',
         maxWidth: 1400, margin: '0 auto',
         position: 'relative', zIndex: 1,
       }}>
@@ -168,7 +168,7 @@ export default function FeedPage() {
           <div key={s.label} style={{
             background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
             border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 12, padding: '12px 16px',
+            borderRadius: 10, padding: '10px 14px',
             backdropFilter: 'blur(12px)',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)',
             transition: 'all 0.3s',
@@ -187,7 +187,7 @@ export default function FeedPage() {
               letterSpacing: '0.12em', marginBottom: 8, fontWeight: 600,
             }}>{s.label}</div>
             <div style={{
-              fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px',
+              fontSize: 18, fontWeight: 700, letterSpacing: '-0.5px',
               fontVariantNumeric: 'tabular-nums',
               color: s.color || '#e8e8e8',
               textShadow: s.glow ? '0 0 20px rgba(26,255,110,0.3)' : 'none',
@@ -198,9 +198,9 @@ export default function FeedPage() {
         ))}
       </div>
       {/* ── Feed ── */}
-      <div className="max-w-[1400px] mx-auto px-4 py-4" style={{ position: 'relative', zIndex: 1 }}>
+      <div className="max-w-[1400px] mx-auto px-4 pt-3 pb-4" style={{ position: 'relative', zIndex: 1 }}>
         {/* Tabs */}
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-4">
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-4">
           <div className="flex items-center gap-2">
             {tabs.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
