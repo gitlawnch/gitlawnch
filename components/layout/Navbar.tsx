@@ -96,7 +96,7 @@ export default function Navbar() {
                   }
                 }}
                 placeholder="Search token, symbol, address, or creator..."
-                className="w-full pl-9 pr-4 py-2 text-[13px] rounded-xl text-[#e8e8e8] outline-none transition-all" style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(255,255,255,0.15)",color:"#e8e8e8"}} onFocus={e=>{e.currentTarget.style.border="1.5px solid rgba(26,255,110,0.5)";e.currentTarget.style.background="rgba(255,255,255,0.1)"}} onBlur={e=>{e.currentTarget.style.border="1.5px solid rgba(255,255,255,0.15)";e.currentTarget.style.background="rgba(255,255,255,0.08)"}} />
+                className="w-full pl-9 pr-4 py-2 text-[13px] rounded-xl outline-none transition-all" style={{background:"rgba(255,255,255,0.08)",border:"1.5px solid rgba(255,255,255,0.15)",color:"#e8e8e8"}} />
               {showSearch && (query || results.length > 0) && (
                 <div className="absolute top-full mt-2 left-0 right-0 glass rounded-xl overflow-hidden shadow-2xl z-50">
                   {results.length === 0 && query && (
