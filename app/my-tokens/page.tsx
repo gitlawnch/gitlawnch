@@ -233,15 +233,23 @@ export default function MyTokensPage() {
                       Claimable Fees
                     </div>
                     {hasFees ? (
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                        <div>
-                          <span style={{ fontSize: 22, fontWeight: 700, color: '#1aff6e', textShadow: '0 0 16px rgba(26,255,110,0.25)' }}>{ethAmt.toFixed(5)}</span>
-                          <span style={{ fontSize: 12, color: '#555', marginLeft: 4, fontFamily: 'JetBrains Mono, monospace' }}>WETH</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        {/* WETH fees — primary */}
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                          <span style={{ fontSize: 20, fontWeight: 700, color: '#1aff6e', textShadow: '0 0 14px rgba(26,255,110,0.25)', fontFamily: 'JetBrains Mono, monospace' }}>
+                            {ethAmt.toFixed(5)}
+                          </span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: '#1aff6e', fontFamily: 'JetBrains Mono, monospace', opacity: 0.7 }}>WETH</span>
                         </div>
+                        {/* Divider */}
+                        {tokAmt > 0 && <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.08)' }} />}
+                        {/* Token fees — secondary */}
                         {tokAmt > 0 && (
-                          <div>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: '#00d4ff' }}>{fmtNum(tokAmt)}</span>
-                            <span style={{ fontSize: 11, color: '#444', marginLeft: 4, fontFamily: 'JetBrains Mono, monospace' }}>{t.symbol}</span>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                            <span style={{ fontSize: 15, fontWeight: 600, color: '#e8e8e8', fontFamily: 'JetBrains Mono, monospace' }}>
+                              {fmtNum(tokAmt)}
+                            </span>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#aaa', fontFamily: 'JetBrains Mono, monospace' }}>{t.symbol}</span>
                           </div>
                         )}
                       </div>
