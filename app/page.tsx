@@ -103,7 +103,7 @@ export default function FeedPage() {
 
         <h1 style={{
           fontSize: 18, fontWeight: 700, color: '#e8e8e8',
-          lineHeight: 1.15, letterSpacing: '-1.5px', marginBottom: 14,
+          lineHeight: 1.2, letterSpacing: '-1.5px', marginBottom: 14,
         }}>
           Launch tokens on{' '}
           <span style={{ color: '#1aff6e', textShadow: '0 0 28px rgba(26,255,110,0.35)' }}>Base</span>
