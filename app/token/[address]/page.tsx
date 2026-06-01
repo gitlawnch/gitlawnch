@@ -604,9 +604,6 @@ export default function TokenPage({ params }: { params: Promise<{ address: strin
                 </div>
                       ))
                     }
-                  </tbody>
-                </table>
-              </div>
             </div>
           </div>
 
