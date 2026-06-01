@@ -127,13 +127,15 @@ export default function ActivityTicker() {
       <div style={{
         width: '100%',
         height: 40,
-        background: 'rgba(10,10,10,0.9)',
-        borderBottom: '1px solid rgba(26,255,110,0.08)',
-        borderTop: '1px solid rgba(26,255,110,0.05)',
-        backdropFilter: 'blur(10px)',
+        background: 'rgba(8,8,8,0.92)',
+        borderTop: '1px solid rgba(26,255,110,0.12)',
+        borderBottom: '1px solid rgba(26,255,110,0.06)',
+        backdropFilter: 'blur(12px)',
         overflow: 'hidden',
         display: 'flex', alignItems: 'center',
         position: 'relative', zIndex: 40,
+        marginTop: 0,
+        boxShadow: 'inset 0 1px 0 rgba(26,255,110,0.04)',
       }}>
         {/* Fade left */}
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 48, background: 'linear-gradient(90deg, rgba(10,10,10,1), transparent)', zIndex: 2, pointerEvents: 'none' }} />

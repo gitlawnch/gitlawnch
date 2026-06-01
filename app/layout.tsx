@@ -32,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <BackgroundCanvas />
         <Navbar />
         <div style={{ paddingTop: 64, position: 'relative', zIndex: 1 }}>
+          <div style={{ height: 10, background: 'rgba(6,6,6,0.95)' }} />
           <ActivityTicker />
           <main>
             {children}
