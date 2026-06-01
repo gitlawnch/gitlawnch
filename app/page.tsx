@@ -94,7 +94,7 @@ export default function FeedPage() {
           display: 'inline-flex', alignItems: 'center', gap: 7,
           background: 'rgba(26,255,110,0.07)', border: '1px solid rgba(26,255,110,0.18)',
           borderRadius: 20, padding: '5px 14px', fontSize: 12,
-          color: '#1aff6e', fontWeight: 500, marginBottom: 10,
+          color: '#1aff6e', fontWeight: 500, marginBottom: 16,
           boxShadow: '0 0 16px rgba(26,255,110,0.07)',
         }}>
           <div className="live-dot" style={{ width: 6, height: 6 }} />
@@ -103,7 +103,7 @@ export default function FeedPage() {
 
         <h1 style={{
           fontSize: 18, fontWeight: 700, color: '#e8e8e8',
-          lineHeight: 1.2, letterSpacing: '-1.5px', marginBottom: 14,
+          lineHeight: 1.18, letterSpacing: '-2px', marginBottom: 18,
         }}>
           Launch tokens on{' '}
           <span style={{ color: '#1aff6e', textShadow: '0 0 28px rgba(26,255,110,0.35)' }}>Base</span>
@@ -112,7 +112,7 @@ export default function FeedPage() {
 
         <p style={{
           fontSize: 15, color: '#555', lineHeight: 1.6,
-          maxWidth: 500, margin: '0 auto 12px',
+          maxWidth: 500, margin: '0 auto 16px',
         }}>
           Instant Uniswap V4 pool. 100B fixed supply.<br />
           1% trading fee — 80% goes to you, forever.
