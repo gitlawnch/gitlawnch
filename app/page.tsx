@@ -141,7 +141,7 @@ export default function FeedPage() {
 
       {/* ── Stats cards ── */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4,1fr)',
+        display: 'grid', gridTemplateColumns: 'repeat(3,1fr)',
         gap: 10, padding: '12px 24px 0',
         maxWidth: 1400, margin: '0 auto',
         position: 'relative', zIndex: 1,
@@ -190,8 +190,8 @@ export default function FeedPage() {
             <div style={{
               fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px',
               fontVariantNumeric: 'tabular-nums',
-              color: s.green ? '#1aff6e' : '#e8e8e8',
-              textShadow: s.green ? '0 0 20px rgba(26,255,110,0.3)' : 'none',
+              color: s.color || '#e8e8e8',
+              textShadow: s.glow ? '0 0 20px rgba(26,255,110,0.3)' : 'none',
             }}>
               {s.value || '--'}
             </div>
