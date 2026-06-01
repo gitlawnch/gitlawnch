@@ -218,8 +218,7 @@ export default function FeedPage() {
 
         {/* Table */}
         <div className="glass overflow-hidden overflow-x-auto" style={{border:"1px solid rgba(26,255,110,0.15)"}}>
-          <div className="grid items-center px-4 py-2.5 min-w-[700px]" style={{borderBottom:"1px solid rgba(26,255,110,0.08)",background:"rgba(255,255,255,0.03)"}}
-            style={{ gridTemplateColumns: GRID }}>
+          <div className="grid items-center px-4 py-2.5 min-w-[700px]" style={{borderBottom:"1px solid rgba(26,255,110,0.08)",background:"rgba(255,255,255,0.03)", gridTemplateColumns: GRID}}>
             <span />
             <span style={{fontSize:10,color:'rgba(255,255,255,0.75)',textTransform:'uppercase',letterSpacing:'0.09em',fontWeight:600,fontFamily:'JetBrains Mono,monospace'}}>Token</span>
             <span style={{fontSize:10,color:'rgba(255,255,255,0.75)',textTransform:'uppercase',letterSpacing:'0.09em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'right',paddingRight:12}}>MCap</span>
