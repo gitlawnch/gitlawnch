@@ -119,7 +119,7 @@ export default function BackgroundCanvas() {
         width: '100%', height: '100%',
         zIndex: 0,
         pointerEvents: 'none',
-        opacity: 0.5,
+        opacity: 0.3,
       }}
     />
   )
