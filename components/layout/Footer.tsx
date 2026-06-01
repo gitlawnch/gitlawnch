@@ -10,7 +10,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-3">
               <div style={{ width: 32, height: 32, borderRadius: 9, overflow: 'hidden', flexShrink: 0 }}>
-                <img src="https://nwkrwvxdttsosikoweop.supabase.co/storage/v1/object/public/token-logos/ChatGPT%20Image%201%20Jun%202026,%2016.50.34.png" alt="gitlawnch" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src="/logo.png" alt="gitlawnch" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <span className="font-display font-700 text-white text-[14px]">gitlawnch</span>
             </div>

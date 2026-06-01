@@ -63,11 +63,8 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00ff87] to-[#00d4ff] flex items-center justify-center shadow-[0_0_20px_rgba(0,255,135,0.4)]">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 2L13 5v6L8 14 3 11V5L8 2z" stroke="#050a0e" strokeWidth="1.5" strokeLinejoin="round"/>
-                <path d="M8 6v4M6 8h4" stroke="#050a0e" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
+            <div style={{ width: 32, height: 32, borderRadius: 8, overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 16px rgba(26,255,110,0.2)' }}>
+              <img src="/logo.png" alt="gitlawnch" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <span className="font-display font-800 text-[15px] text-white tracking-tight">gitlawnch</span>
           </Link>
