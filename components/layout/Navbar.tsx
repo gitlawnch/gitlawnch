@@ -53,9 +53,12 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-[#050a0e]/90 backdrop-blur-xl border-b border-[rgba(0,255,135,0.08)]' : 'bg-transparent'
-      }`}>
+      <nav className="fixed top-0 left-0 right-0 z-50" style={{
+        background: 'rgba(15,15,15,0.98)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(26,255,110,0.1)',
+        boxShadow: '0 1px 20px rgba(0,0,0,0.5)',
+      }}>
         <div className="max-w-[1400px] mx-auto px-4 h-16 flex items-center gap-4">
 
           {/* Logo */}

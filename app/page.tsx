@@ -80,7 +80,7 @@ export default function FeedPage() {
   const GRID = '28px minmax(160px,1fr) 80px 110px 110px 60px 110px 70px'
 
   return (
-    <div className="min-h-screen pt-20">
+    <div className="min-h-screen">
 
       {/* ── Hero ── */}
       <div style={{
