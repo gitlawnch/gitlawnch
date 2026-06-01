@@ -542,42 +542,66 @@ export default function TokenPage({ params }: { params: Promise<{ address: strin
             </div>
 
             {/* Trades */}
-            <div className="glass overflow-hidden">
-              <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.04)] flex items-center justify-between">
-                <span className="text-[13px] font-medium text-white">Recent Trades</span>
-                <div className="flex items-center gap-1.5 text-[11px] text-second font-mono"><div className="live-dot" /> Live</div>
+            <div style={{ background: 'linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, overflow: 'hidden', backdropFilter: 'blur(12px)' }}>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#e8e8e8' }}>Recent Trades</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#1aff6e', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>
+                  <div className="live-dot" style={{ width: 5, height: 5 }} /> Live
+                </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-[rgba(255,255,255,0.04)]">
-                      {['Side', 'Amount', 'Value', 'Wallet', 'Time'].map(h => (
-                        <th key={h} className="px-4 py-2.5 text-left text-[10px] text-muted uppercase tracking-wider font-mono">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {swaps.length === 0
-                      ? <tr><td colSpan={5} className="px-4 py-8 text-center text-[13px] text-second">No trades yet</td></tr>
-                      : swaps.map(s => (
-                        <tr key={s.id} className="border-b border-[rgba(255,255,255,0.03)] hover:bg-white/[0.02] transition-colors">
-                          <td className="px-4 py-2.5">
-                            <span className={`text-[12px] font-mono font-600 ${s.is_buy ? 'text-green' : 'text-red'}`}>
-                              {s.is_buy ? 'BUY' : 'SELL'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-[12px] text-white font-mono">
-                            {s.is_buy ? fmtEth(s.amount_in) + ' ETH' : fmtNum(Number(BigInt(s.amount_in)) / 1e18) + ' ' + token.symbol}
-                          </td>
-                          <td className="px-4 py-2.5 text-[12px] text-second font-mono">
-                            {s.price_usd ? fmtUsd(s.price_usd * Number(BigInt(s.amount_in)) / 1e18) : '--'}
-                          </td>
-                          <td className="px-4 py-2.5 text-[12px] text-muted font-mono">
-                            <a href={`https://basescan.org/tx/${s.tx_hash}`} target="_blank" rel="noopener noreferrer"
-                              className="hover:text-green transition-colors">{fmtAddr(s.sender)}</a>
-                          </td>
-                          <td className="px-4 py-2.5 text-[12px] text-muted font-mono">{fmtAge(s.timestamp)}</td>
-                        </tr>
+              {/* Table header */}
+              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 100px 120px 80px', padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)' }}>
+                {['Side', 'Amount', 'Value', 'Wallet', 'Time'].map(h => (
+                  <div key={h} style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{h}</div>
+                ))}
+              </div>
+              {/* Rows */}
+              {swaps.length === 0 ? (
+                <div style={{ padding: '40px 16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>📊</div>
+                  <div style={{ fontSize: 13, color: '#555' }}>No trades yet</div>
+                  <div style={{ fontSize: 11, color: '#333', marginTop: 4 }}>Be the first to trade {token.symbol}</div>
+                </div>
+              ) : swaps.map(s => (
+                <div key={s.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 100px 120px 80px', padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.03)', alignItems: 'center', transition: 'background 0.15s', cursor: 'pointer', background: 'transparent' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = s.is_buy ? 'rgba(26,255,110,0.03)' : 'rgba(255,70,70,0.03)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  {/* Side badge */}
+                  <div>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace',
+                      padding: '3px 8px', borderRadius: 6,
+                      background: s.is_buy ? 'rgba(26,255,110,0.1)' : 'rgba(255,70,70,0.1)',
+                      border: `1px solid ${s.is_buy ? 'rgba(26,255,110,0.25)' : 'rgba(255,70,70,0.25)'}`,
+                      color: s.is_buy ? '#1aff6e' : '#ff4646',
+                    }}>
+                      {s.is_buy ? '▲' : '▼'} {s.is_buy ? 'BUY' : 'SELL'}
+                    </span>
+                  </div>
+                  {/* Amount */}
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#e8e8e8', fontFamily: 'JetBrains Mono, monospace' }}>
+                    {s.is_buy ? fmtEth(s.amount_in) + ' ETH' : fmtNum(Number(BigInt(s.amount_in)) / 1e18) + ' ' + token.symbol}
+                  </div>
+                  {/* Value */}
+                  <div style={{ fontSize: 12, color: s.is_buy ? 'rgba(26,255,110,0.8)' : 'rgba(255,70,70,0.8)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 500 }}>
+                    {s.price_usd ? fmtUsd(s.price_usd * Number(BigInt(s.amount_in)) / 1e18) : '--'}
+                  </div>
+                  {/* Wallet — clickable */}
+                  <div>
+                    <a href={`/profile/${s.sender}`}
+                      style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: 'JetBrains Mono, monospace', textDecoration: 'none', transition: 'color 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#1aff6e')}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}>
+                      {fmtAddr(s.sender)}
+                    </a>
+                  </div>
+                  {/* Time */}
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'JetBrains Mono, monospace' }}>
+                    {fmtAge(s.timestamp)}
+                  </div>
+                </div>
                       ))
                     }
                   </tbody>
