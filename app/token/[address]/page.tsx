@@ -439,19 +439,49 @@ export default function TokenPage({ params }: { params: Promise<{ address: strin
 
         {/* Stats pills */}
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-5">
-          {[
-            { label: 'Market Cap',  value: mcapUsd > 0 ? fmtUsd(mcapUsd) : fmtUsd(token.market_cap_usd) },
-            { label: 'Volume 24h',  value: fmtUsd(token.volume_24h_usd), green: (token.volume_24h_usd || 0) > 0 },
-            { label: 'Fees Earned', value: claimableEth > 0n || claimableTok > 0n ? fmtUsd((Number(claimableEth) / 1e18) * (token.price_usd > 0 ? token.price_usd * 1 : 0)) : (token.creator_fees_earned ? fmtUsd(token.creator_fees_earned) : '--') },
-            { label: 'Txns',        value: token.total_txns ? String(token.total_txns) : '--' },
-            { label: 'Supply',      value: '100B' },
-            { label: 'Network',     value: 'Base' },
-          ].map(s => (
-            <div key={s.label} className="glass px-3 py-2.5">
-              <div className="text-[10px] text-muted uppercase tracking-wider font-mono mb-1">{s.label}</div>
-              <div className={`text-[14px] font-mono font-500 ${s.green ? 'text-green' : 'text-white'}`}>{s.value}</div>
+          {/* Market Cap — primary */}
+          <div style={{ background: 'linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '12px 14px', backdropFilter: 'blur(12px)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', marginBottom: 6 }}>Market Cap</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-0.3px' }}>
+              {mcapUsd > 0 ? fmtUsd(mcapUsd) : fmtUsd(token.market_cap_usd)}
             </div>
-          ))}
+          </div>
+
+          {/* Volume 24h — green */}
+          <div style={{ background: 'linear-gradient(135deg,rgba(26,255,110,0.07),rgba(26,255,110,0.02))', border: '1px solid rgba(26,255,110,0.2)', borderRadius: 12, padding: '12px 14px', backdropFilter: 'blur(12px)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(26,255,110,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', marginBottom: 6 }}>Volume 24h</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: (token.volume_24h_usd||0) > 0 ? '#1aff6e' : '#333', fontFamily: 'JetBrains Mono, monospace', textShadow: (token.volume_24h_usd||0) > 0 ? '0 0 12px rgba(26,255,110,0.25)' : 'none' }}>
+              {(token.volume_24h_usd||0) > 0 ? fmtUsd(token.volume_24h_usd) : '--'}
+            </div>
+          </div>
+
+          {/* Fees Earned — gold */}
+          <div style={{ background: 'linear-gradient(135deg,rgba(255,200,50,0.06),rgba(255,200,50,0.02))', border: '1px solid rgba(255,200,50,0.15)', borderRadius: 12, padding: '12px 14px', backdropFilter: 'blur(12px)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(255,200,50,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', marginBottom: 6 }}>Fees Earned</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: (token.creator_fees_earned||0) >= 1 ? '#ffc832' : '#333', fontFamily: 'JetBrains Mono, monospace' }}>
+              {(token.creator_fees_earned||0) >= 1 ? fmtUsd(token.creator_fees_earned) : '--'}
+            </div>
+          </div>
+
+          {/* Txns */}
+          <div style={{ background: 'linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '12px 14px', backdropFilter: 'blur(12px)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', marginBottom: 6 }}>Txns</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: (token.total_txns||0) > 0 ? '#e8e8e8' : '#333', fontFamily: 'JetBrains Mono, monospace' }}>
+              {(token.total_txns||0) > 0 ? <>{token.total_txns} <span style={{fontSize:11,color:'rgba(255,255,255,0.3)',fontWeight:400}}>tx</span></> : '--'}
+            </div>
+          </div>
+
+          {/* Supply */}
+          <div style={{ background: 'linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '12px 14px', backdropFilter: 'blur(12px)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', marginBottom: 6 }}>Supply</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#e8e8e8', fontFamily: 'JetBrains Mono, monospace' }}>100B</div>
+          </div>
+
+          {/* Network */}
+          <div style={{ background: 'linear-gradient(135deg,rgba(77,159,255,0.06),rgba(77,159,255,0.02))', border: '1px solid rgba(77,159,255,0.15)', borderRadius: 12, padding: '12px 14px', backdropFilter: 'blur(12px)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(77,159,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace', marginBottom: 6 }}>Network</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#4d9fff', fontFamily: 'JetBrains Mono, monospace' }}>Base</div>
+          </div>
         </div>
 
         {/* Layout */}
