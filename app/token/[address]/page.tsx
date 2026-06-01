@@ -364,30 +364,75 @@ export default function TokenPage({ params }: { params: Promise<{ address: strin
         </Link>
 
         {/* Header */}
-        <div className="flex items-start gap-4 mb-5">
-          <div
-            className="token-avatar !w-12 !h-12 !text-lg shrink-0"
-            onClick={() => token.logo_url && window.open(token.logo_url, '_blank')}
-            style={{ cursor: token.logo_url ? 'pointer' : 'default' }}
-            title={token.logo_url ? 'Click to view full image' : undefined}>
-            {token.logo_url ? <img src={token.logo_url} alt={token.symbol} className="w-full h-full rounded-full object-cover" /> : token.symbol[0]}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 20 }}>
+          {/* Logo */}
+          <div className="token-avatar"
+            style={{ width: 52, height: 52, fontSize: 20, flexShrink: 0, cursor: token.logo_url ? 'pointer' : 'default' }}
+            onClick={() => token.logo_url && window.open(token.logo_url, '_blank')}>
+            {token.logo_url
+              ? <img src={token.logo_url} alt={token.symbol} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              : token.symbol[0]}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-display text-xl font-700 text-white">{token.name}</h1>
-              <span className="text-[12px] text-second font-mono">${token.symbol}</span>
-              <button onClick={copyCA}
-                className="flex items-center gap-1.5 text-[11px] font-mono px-2 py-1 rounded-lg border border-[rgba(255,255,255,0.08)] hover:border-[rgba(0,255,135,0.3)] hover:text-green transition-all text-second">
-                CA: {fmtAddr(token.id)}
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Row 1: name + symbol + badges */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px', margin: 0 }}>{token.name}</h1>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 500 }}>${token.symbol}</span>
+
+              {/* Age badge */}
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#aaa', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '2px 8px', fontFamily: 'JetBrains Mono, monospace' }}>
+                {fmtAge(token.launch_time)}
+              </span>
+
+              {/* Base badge */}
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#4d9fff', background: 'rgba(77,159,255,0.08)', border: '1px solid rgba(77,159,255,0.2)', borderRadius: 20, padding: '2px 8px' }}>
+                Base
+              </span>
+
+              {/* Live badge */}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#1aff6e', background: 'rgba(26,255,110,0.08)', border: '1px solid rgba(26,255,110,0.2)', borderRadius: 20, padding: '2px 8px' }}>
+                <div className="live-dot" style={{ width: 5, height: 5 }} />
+                Live
+              </span>
+            </div>
+
+            {/* Row 2: CA + copy + basescan */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 5 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontFamily: 'JetBrains Mono, monospace' }}>CA</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: 'JetBrains Mono, monospace' }}>
+                {token.id.slice(0,8)}...{token.id.slice(-6)}
+              </span>
+              <button onClick={copyCA} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6,
+                background: copied ? 'rgba(26,255,110,0.12)' : 'rgba(255,255,255,0.06)',
+                border: copied ? '1px solid rgba(26,255,110,0.25)' : '1px solid rgba(255,255,255,0.1)',
+                color: copied ? '#1aff6e' : '#888', cursor: 'pointer', transition: 'all 0.2s',
+                fontFamily: 'Inter, sans-serif',
+              }}>
                 {copied
-                  ? <svg width="10" height="10" fill="none" stroke="#00ff87" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M20 6 9 17l-5-5" strokeLinecap="round"/></svg>
-                  : <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  ? <><svg width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M20 6 9 17l-5-5" strokeLinecap="round"/></svg>Copied</>
+                  : <><svg width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy CA</>
                 }
               </button>
               <a href={`https://basescan.org/address/${token.id}`} target="_blank" rel="noopener noreferrer"
-                className="text-[11px] text-second hover:text-green transition-colors">BaseScan ↗</a>
-              <span className="text-[11px] text-muted">by {fmtAddr(token.creator)}</span>
-              <span className="text-[11px] text-muted">· {fmtAge(token.launch_time)}</span>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#888', textDecoration: 'none', transition: 'all 0.2s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#888'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)' }}>
+                <svg width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                BaseScan
+              </a>
+            </div>
+
+            {/* Row 3: creator */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Created by</span>
+              <a href={`/profile/${token.creator}`} style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontFamily: 'JetBrains Mono, monospace', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#1aff6e')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}>
+                {fmtAddr(token.creator)}
+              </a>
             </div>
           </div>
         </div>
