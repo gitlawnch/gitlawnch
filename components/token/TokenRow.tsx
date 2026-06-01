@@ -6,67 +6,68 @@ interface Props { token: Token; rank: number }
 
 export default function TokenRow({ token, rank }: Props) {
   return (
-    <div className="token-row flex items-center px-4 py-2.5 w-full min-w-[700px]"
-      style={{ borderBottom: '1px solid rgba(26,255,110,0.06)' }}>
+    <div className="token-row flex items-center px-4 py-2.5 w-full min-w-[640px]">
 
       {/* Rank */}
-      <div className="w-6 shrink-0 text-[11px] font-mono" style={{ color: '#333' }}>{rank}</div>
+      <div className="w-6 shrink-0 text-[11px] font-mono text-center" style={{ color: '#2a2a2a' }}>{rank}</div>
 
-      {/* Token cell — name + symbol + creator */}
+      {/* Token cell — name + symbol + creator CA */}
       <Link href={`/token/${token.id}`}
-        className="flex-1 min-w-0 flex items-center gap-2.5 hover:opacity-90 transition-opacity mr-2">
-        <div className="token-avatar shrink-0" style={{ width: 32, height: 32, fontSize: 12 }}>
+        className="flex-1 min-w-0 flex items-center gap-2.5 hover:opacity-90 transition-opacity" style={{ marginRight: 8 }}>
+        <div className="token-avatar shrink-0" style={{ width: 34, height: 34, fontSize: 13 }}>
           {token.logo_url
             ? <img src={token.logo_url} alt={token.symbol} className="w-full h-full rounded-full object-cover" />
             : <span>{token.symbol[0]}</span>}
         </div>
-        <div className="min-w-0">
-          <div className="text-[13px] font-semibold truncate leading-tight" style={{ color: '#fff', fontWeight: 600 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
             {token.name}
           </div>
-          <div className="text-[11px] font-mono leading-tight" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.3 }}>
             ${token.symbol}
           </div>
-          <div className="text-[10px] font-mono leading-tight truncate" style={{ color: 'rgba(255,255,255,0.35)', maxWidth: 130 }}>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
             {fmtAddr(token.creator)}
           </div>
         </div>
       </Link>
 
       {/* MCap */}
-      <div className="w-[120px] shrink-0 text-right pr-3">
-        <span className="text-[13px] font-mono font-semibold" style={{ color: token.market_cap_usd > 0 ? '#fff' : '#333', fontWeight: 600 }}>
+      <div style={{ width: 110, flexShrink: 0, textAlign: 'right', paddingRight: 12 }}>
+        <span style={{ fontSize: 13, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: token.market_cap_usd > 0 ? '#fff' : '#2a2a2a' }}>
           {token.market_cap_usd > 0 ? fmtUsd(token.market_cap_usd) : 'N/A'}
         </span>
       </div>
 
       {/* Volume */}
-      <div className="w-[120px] shrink-0 text-right pr-3">
-        <span className="text-[13px] font-mono font-semibold"
-          style={{ color: token.volume_24h_usd > 0 ? '#33ff80' : '#333', fontWeight: 600, textShadow: token.volume_24h_usd > 0 ? '0 0 12px rgba(26,255,110,0.3)' : 'none' }}>
+      <div style={{ width: 110, flexShrink: 0, textAlign: 'right', paddingRight: 12 }}>
+        <span style={{
+          fontSize: 13, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600,
+          color: token.volume_24h_usd > 0 ? '#33ff80' : '#2a2a2a',
+          textShadow: token.volume_24h_usd > 0 ? '0 0 10px rgba(26,255,110,0.25)' : 'none',
+        }}>
           {token.volume_24h_usd > 0 ? fmtUsd(token.volume_24h_usd) : 'N/A'}
         </span>
       </div>
 
       {/* Txns */}
-      <div className="w-[80px] shrink-0 text-center">
-        <span className="text-[13px] font-mono" style={{ color: token.txns_24h > 0 ? '#fff' : '#333', fontWeight: 500 }}>
+      <div style={{ width: 70, flexShrink: 0, textAlign: 'center' }}>
+        <span style={{ fontSize: 13, fontFamily: 'JetBrains Mono, monospace', fontWeight: 500, color: token.txns_24h > 0 ? '#e8e8e8' : '#2a2a2a' }}>
           {token.txns_24h > 0 ? token.txns_24h : 'N/A'}
         </span>
       </div>
 
       {/* Age */}
-      <div className="w-[80px] shrink-0 text-center">
-        <span className="text-[12px] font-mono" style={{ color: 'rgba(255,255,255,0.7)' }}>
+      <div style={{ width: 70, flexShrink: 0, textAlign: 'center' }}>
+        <span style={{ fontSize: 12, fontFamily: 'JetBrains Mono, monospace', color: 'rgba(255,255,255,0.65)' }}>
           {fmtAge(token.launch_time)}
         </span>
       </div>
 
       {/* Trade */}
-      <div className="w-[100px] shrink-0 text-right">
+      <div style={{ width: 90, flexShrink: 0, textAlign: 'right' }}>
         <Link href={`/token/${token.id}`}
-          className="inline-flex items-center gap-1 text-[13px] font-semibold transition-all"
-          style={{ color: '#1aff6e', fontWeight: 600 }}
+          style={{ fontSize: 13, fontWeight: 600, color: '#1aff6e', textDecoration: 'none', transition: 'all 0.15s' }}
           onMouseEnter={e => {
             e.currentTarget.style.color = '#4dff99'
             e.currentTarget.style.textShadow = '0 0 10px rgba(26,255,110,0.5)'

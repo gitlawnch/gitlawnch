@@ -77,7 +77,7 @@ export default function FeedPage() {
     return '$' + v.toFixed(2)
   }
 
-  const GRID = '24px 1fr 120px 120px 80px 80px 100px'
+  const GRID = '24px 1fr 110px 110px 70px 70px 90px'
 
   return (
     <div className="min-h-screen">
@@ -220,12 +220,12 @@ export default function FeedPage() {
         <div className="glass overflow-hidden overflow-x-auto" style={{border:"1px solid rgba(26,255,110,0.15)"}}>
           <div className="grid items-center px-4 py-2.5 min-w-[700px]" style={{borderBottom:"1px solid rgba(26,255,110,0.08)",background:"rgba(255,255,255,0.03)", gridTemplateColumns: GRID}}>
             <span />
-            <span style={{fontSize:10,color:'rgba(255,255,255,0.75)',textTransform:'uppercase',letterSpacing:'0.09em',fontWeight:600,fontFamily:'JetBrains Mono,monospace'}}>Token</span>
-            <span style={{fontSize:10,color:'rgba(255,255,255,0.75)',textTransform:'uppercase',letterSpacing:'0.09em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'right',paddingRight:12}}>MCap</span>
-            <span style={{fontSize:10,color:'rgba(255,255,255,0.75)',textTransform:'uppercase',letterSpacing:'0.09em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'right',paddingRight:12}}>Volume</span>
-            <span style={{fontSize:10,color:'rgba(255,255,255,0.75)',textTransform:'uppercase',letterSpacing:'0.09em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'center'}}>Txns</span>
-            <span style={{fontSize:10,color:'rgba(255,255,255,0.75)',textTransform:'uppercase',letterSpacing:'0.09em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'center'}}>Age</span>
-            <span style={{fontSize:10,color:'rgba(255,255,255,0.75)',textTransform:'uppercase',letterSpacing:'0.09em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'right'}}>Trade</span>
+            <span style={{fontSize:11,color:'rgba(255,255,255,0.8)',textTransform:'uppercase',letterSpacing:'0.1em',fontWeight:600,fontFamily:'JetBrains Mono,monospace'}}>Token</span>
+            <span style={{fontSize:11,color:'rgba(255,255,255,0.8)',textTransform:'uppercase',letterSpacing:'0.1em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'right',paddingRight:12}}>MCap</span>
+            <span style={{fontSize:11,color:'rgba(255,255,255,0.8)',textTransform:'uppercase',letterSpacing:'0.1em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'right',paddingRight:12}}>Volume</span>
+            <span style={{fontSize:11,color:'rgba(255,255,255,0.8)',textTransform:'uppercase',letterSpacing:'0.1em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'center'}}>Txns</span>
+            <span style={{fontSize:11,color:'rgba(255,255,255,0.8)',textTransform:'uppercase',letterSpacing:'0.1em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'center'}}>Age</span>
+            <span style={{fontSize:11,color:'rgba(255,255,255,0.8)',textTransform:'uppercase',letterSpacing:'0.1em',fontWeight:600,fontFamily:'JetBrains Mono,monospace',textAlign:'right'}}>Trade</span>
           </div>
 
           {loading ? (
