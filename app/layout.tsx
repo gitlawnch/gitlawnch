@@ -30,14 +30,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <BackgroundCanvas />
-        <ActivityTicker />
-        <div style={{ paddingTop: 32 }}>
         <Navbar />
+        <ActivityTicker />
         <main className="relative z-10">
           {children}
         </main>
         <Footer />
-        </div>
       </body>
     </html>
   )
