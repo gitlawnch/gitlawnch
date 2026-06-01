@@ -11,6 +11,8 @@ export default function FeedPage() {
   const [tokens,  setTokens]  = useState<Token[]>([])
   const [loading, setLoading] = useState(true)
   const [stats,   setStats]   = useState({ totalTokens: 0, totalSwaps: 0, wethPrice: 0, lastBlock: 0 })
+  const [volume24h,  setVolume24h]  = useState(0)
+  const [creatorFees, setCreatorFees] = useState(0)
   const [counted, setCounted] = useState(false)
 
   useEffect(() => {
@@ -48,6 +50,18 @@ export default function FeedPage() {
   async function loadStats() {
     const s = await getStats()
     setStats(s)
+    // Fetch 24h volume and creator fees
+    try {
+      const { data: volData } = await supabase
+        .from('tokens')
+        .select('volume_24h_usd, creator_fees_earned')
+      if (volData) {
+        const totalVol = volData.reduce((sum: number, t: any) => sum + (t.volume_24h_usd || 0), 0)
+        const totalFees = volData.reduce((sum: number, t: any) => sum + (t.creator_fees_earned || 0), 0)
+        setVolume24h(totalVol)
+        setCreatorFees(totalFees)
+      }
+    } catch {}
   }
 
   const tabs = [
@@ -55,6 +69,14 @@ export default function FeedPage() {
     { id: 'trending' as Tab, label: 'Trending',   emoji: '🔥' },
     { id: 'volume'   as Tab, label: 'Top Volume', emoji: '📊' },
   ]
+
+
+  function fmtStatUsd(v: number) {
+    if (v === 0) return '--'
+    if (v >= 1000000) return '$' + (v / 1000000).toFixed(2) + 'M'
+    if (v >= 1000) return '$' + (v / 1000).toFixed(2) + 'K'
+    return '$' + v.toFixed(2)
+  }
 
   const GRID = '28px minmax(160px,1fr) 80px 110px 110px 60px 110px 70px'
 
