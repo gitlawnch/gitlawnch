@@ -10,11 +10,11 @@ export default function FeedPage() {
   const [tokens,  setTokens]  = useState<Token[]>([])
   const [loading, setLoading] = useState(true)
   const [stats,   setStats]   = useState({ totalTokens: 0, totalSwaps: 0, wethPrice: 0, lastBlock: 0 })
+  const [counted, setCounted] = useState(false)
 
   useEffect(() => {
     loadTokens()
     loadStats()
-
     const sub = supabase.channel('tokens-feed')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tokens' },
         async payload => {
@@ -28,6 +28,11 @@ export default function FeedPage() {
       .subscribe()
     return () => { supabase.removeChannel(sub) }
   }, [tab])
+
+  // Count-up animation trigger
+  useEffect(() => {
+    if (stats.totalTokens > 0 && !counted) setCounted(true)
+  }, [stats])
 
   async function loadTokens() {
     setLoading(true)
@@ -50,39 +55,107 @@ export default function FeedPage() {
     { id: 'volume'   as Tab, label: 'Top Volume', emoji: '📊' },
   ]
 
+  const GRID = '28px minmax(160px,1fr) 80px 110px 110px 60px 110px 70px'
+
   return (
     <div className="min-h-screen pt-20">
 
-      {/* Stats bar */}
-      <div className="border-b border-[rgba(0,255,135,0.06)] bg-[rgba(10,21,32,0.5)]">
-        <div className="max-w-[1400px] mx-auto px-4 py-3 flex items-center gap-8 overflow-x-auto">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="live-dot" />
-            <span className="text-[11px] text-second font-mono">LIVE · Base Mainnet</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[11px] text-muted font-mono">TOKENS</span>
-            <span className="text-[11px] text-white font-mono ml-1">{stats.totalTokens.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[11px] text-muted font-mono">TRADES</span>
-            <span className="text-[11px] text-white font-mono ml-1">{stats.totalSwaps.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[11px] text-muted font-mono">ETH</span>
-            <span className="text-[11px] text-green font-mono ml-1">
-              {stats.wethPrice > 0 ? `$${stats.wethPrice.toFixed(2)}` : '--'}
-            </span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0 ml-auto">
-            <span className="text-[11px] text-muted font-mono">BLOCK</span>
-            <span className="text-[11px] text-second font-mono ml-1">#{stats.lastBlock.toLocaleString()}</span>
-          </div>
+      {/* ── Hero ── */}
+      <div style={{
+        textAlign: 'center',
+        padding: '52px 24px 40px',
+        borderBottom: '1px solid rgba(26,255,110,0.06)',
+        position: 'relative', zIndex: 1,
+      }}>
+        {/* Live badge */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 7,
+          background: 'rgba(26,255,110,0.07)', border: '1px solid rgba(26,255,110,0.18)',
+          borderRadius: 20, padding: '5px 14px', fontSize: 12,
+          color: '#1aff6e', fontWeight: 500, marginBottom: 20,
+          boxShadow: '0 0 16px rgba(26,255,110,0.07)',
+        }}>
+          <div className="live-dot" style={{ width: 6, height: 6 }} />
+          Live on Base Mainnet
+        </div>
+
+        <h1 style={{
+          fontSize: 44, fontWeight: 700, color: '#e8e8e8',
+          lineHeight: 1.15, letterSpacing: '-1.5px', marginBottom: 14,
+        }}>
+          Launch tokens on{' '}
+          <span style={{ color: '#1aff6e', textShadow: '0 0 28px rgba(26,255,110,0.35)' }}>Base</span>
+          {' '}in seconds
+        </h1>
+
+        <p style={{
+          fontSize: 15, color: '#555', lineHeight: 1.6,
+          maxWidth: 440, margin: '0 auto 28px',
+        }}>
+          Instant Uniswap V4 pool. 100B fixed supply.<br />
+          1% trading fee — 80% goes to you, forever.
+        </p>
+
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <button
+            onClick={() => document.dispatchEvent(new CustomEvent('open-launch'))}
+            className="btn-green"
+            style={{ fontSize: 14, padding: '11px 28px' }}>
+            🚀 Launch a Token
+          </button>
+          <a href="/about" style={{
+            fontSize: 14, padding: '11px 28px', borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.08)', color: '#666',
+            background: 'transparent', cursor: 'pointer', textDecoration: 'none',
+            display: 'inline-flex', alignItems: 'center', transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)'; (e.currentTarget as HTMLElement).style.color = '#aaa' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#666' }}>
+            How it works
+          </a>
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 py-6">
+      {/* ── Stats cards ── */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(4,1fr)',
+        gap: 12, padding: '20px 24px 0',
+        maxWidth: 1400, margin: '0 auto',
+        position: 'relative', zIndex: 1,
+      }}>
+        {[
+          { label: 'Tokens',    value: stats.totalTokens.toLocaleString(), green: false },
+          { label: 'Trades',    value: stats.totalSwaps.toLocaleString(),  green: false },
+          { label: 'ETH Price', value: stats.wethPrice > 0 ? `$${stats.wethPrice.toFixed(2)}` : '--', green: true },
+          { label: 'Block',     value: stats.lastBlock > 0 ? `#${stats.lastBlock.toLocaleString()}` : '--', green: false },
+        ].map(s => (
+          <div key={s.label} style={{
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 12, padding: '14px 18px',
+            transition: 'border-color 0.3s',
+            position: 'relative', overflow: 'hidden',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(26,255,110,0.2)')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}>
+            <div style={{
+              fontSize: 10, color: '#333', textTransform: 'uppercase',
+              letterSpacing: '0.1em', marginBottom: 6, fontWeight: 600,
+            }}>{s.label}</div>
+            <div style={{
+              fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px',
+              fontVariantNumeric: 'tabular-nums',
+              color: s.green ? '#1aff6e' : '#e8e8e8',
+              textShadow: s.green ? '0 0 16px rgba(26,255,110,0.2)' : 'none',
+            }}>
+              {s.value || '--'}
+            </div>
+          </div>
+        ))}
+      </div>
 
+      {/* ── Feed ── */}
+      <div className="max-w-[1400px] mx-auto px-4 py-6" style={{ position: 'relative', zIndex: 1 }}>
         {/* Tabs */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <div className="flex items-center gap-2">
@@ -101,35 +174,33 @@ export default function FeedPage() {
         </div>
 
         {/* Table */}
-        <div className="glass overflow-x-auto">
-
-          {/* Header — must exactly match TokenRow widths */}
-          <div className="flex items-center px-6 py-2.5 border-b border-[rgba(255,255,255,0.04)] min-w-[900px]">
-            <div className="w-8 shrink-0" />
-            <div className="w-[200px] shrink-0 text-[11px] text-muted uppercase tracking-wider font-mono">Token</div>
-            <div className="w-[130px] shrink-0 text-[11px] text-muted uppercase tracking-wider font-mono">Creator</div>
-            <div className="w-[100px] shrink-0 text-[11px] text-muted uppercase tracking-wider font-mono">Age</div>
-            <div className="w-[120px] shrink-0 text-[11px] text-muted uppercase tracking-wider font-mono text-right pr-4">MCap</div>
-            <div className="w-[120px] shrink-0 text-[11px] text-muted uppercase tracking-wider font-mono text-right pr-4">Volume</div>
-            <div className="w-[70px] shrink-0 text-[11px] text-muted uppercase tracking-wider font-mono text-right pr-4">Txns</div>
-            <div className="w-[120px] shrink-0 text-[11px] text-muted uppercase tracking-wider font-mono text-right pr-4">Fees</div>
-            <div className="flex-1 text-[11px] text-muted uppercase tracking-wider font-mono text-right">Trade</div>
+        <div className="glass overflow-hidden overflow-x-auto">
+          <div className="grid items-center px-4 py-2.5 border-b border-[rgba(255,255,255,0.04)] min-w-[700px]"
+            style={{ gridTemplateColumns: GRID }}>
+            <span />
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono">Token</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono">Age</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">MCap</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">Volume</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">Txns</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">Fees</span>
+            <span className="text-[11px] text-muted uppercase tracking-wider font-mono text-right">Trade</span>
           </div>
 
           {loading ? (
-            <div className="py-20 text-center min-w-[900px]">
+            <div className="py-20 text-center">
               <div className="inline-flex items-center gap-2 text-second text-[13px]">
-                <div className="w-4 h-4 border-2 border-[#00ff87] border-t-transparent rounded-full animate-spin" />
-                Loading tokens…
+                <div className="w-4 h-4 border-2 border-[#1aff6e] border-t-transparent rounded-full animate-spin" />
+                Loading tokens...
               </div>
             </div>
           ) : tokens.length === 0 ? (
-            <div className="py-20 text-center min-w-[900px]">
+            <div className="py-20 text-center">
               <div className="text-4xl mb-3">🌱</div>
               <div className="text-[14px] text-second">No tokens yet. Be the first to launch!</div>
             </div>
           ) : (
-            <div className="min-w-[900px]">
+            <div className="min-w-[700px]">
               {tokens.map((t, i) => <TokenRow key={t.id} token={t} rank={i + 1} />)}
             </div>
           )}
